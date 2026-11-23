@@ -1,0 +1,8 @@
+services:
+  frontend:
+    build:
+      context: ./services/frontend
+      args:
+        APP_VERSION: local
+    ports:
+      - "8080:8080"

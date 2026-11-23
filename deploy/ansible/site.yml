@@ -1,0 +1,8 @@
+---
+# Deploys the Waldo release to the kind cluster.
+# Usage: ansible-playbook site.yml -e dockerhub_user=<user> -e image_tag=<git-sha>
+- name: Deploy Waldo
+  hosts: server
+  gather_facts: false
+  roles:
+    - helm_deploy

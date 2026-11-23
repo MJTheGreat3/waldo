@@ -1,0 +1,12 @@
+# Each person reviews the other's area.
+
+/deploy/ansible/   @MJTheGreat3
+/deploy/kyverno/   @MJTheGreat3
+/deploy/vault/     @MJTheGreat3
+/ci/               @MJTheGreat3
+
+/services/         @Dheeraj-Murthy
+/ml/               @Dheeraj-Murthy
+
+/deploy/helm/      @MJTheGreat3 @Dheeraj-Murthy
+/docs/             @MJTheGreat3 @Dheeraj-Murthy

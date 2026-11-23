@@ -1,0 +1,83 @@
+// Waldo pipeline, P0 skeleton.
+// Later phases add: gitleaks, unit tests, model gate, semgrep, trivy, syft, cosign, kyverno, zap.
+pipeline {
+  agent any
+
+  options {
+    timestamps()
+    disableConcurrentBuilds()
+    buildDiscarder(logRotator(numToKeepStr: '20'))
+  }
+
+  environment {
+    // Jenkins credential id "dockerhub": username + access token
+    DOCKERHUB = credentials('dockerhub')
+    DOCKERHUB_USER = "${env.DOCKERHUB_USR}"
+    IMAGE_TAG = "${env.GIT_COMMIT?.take(8)}"
+    FRONTEND_IMAGE = "${env.DOCKERHUB_USR}/waldo-frontend"
+    PATH = "/opt/homebrew/bin:/usr/local/bin:${env.PATH}"
+  }
+
+  stages {
+    stage('Test') {
+      steps {
+        sh '''
+          grep -q '__VERSION__' services/frontend/public/index.html
+          docker run --rm -v "$PWD/services/frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro" \
+            nginxinc/nginx-unprivileged:1.27-alpine nginx -t
+        '''
+      }
+    }
+
+    stage('Build') {
+      steps {
+        sh '''
+          docker build \
+            --build-arg APP_VERSION="${IMAGE_TAG}" \
+            -t "${FRONTEND_IMAGE}:${IMAGE_TAG}" \
+            services/frontend
+        '''
+      }
+    }
+
+    stage('Push to Docker Hub') {
+      when { branch 'main' }
+      steps {
+        sh '''
+          echo "${DOCKERHUB_PSW}" | docker login -u "${DOCKERHUB_USR}" --password-stdin
+          docker push "${FRONTEND_IMAGE}:${IMAGE_TAG}"
+          docker logout
+        '''
+      }
+    }
+
+    stage('Deploy') {
+      when { branch 'main' }
+      steps {
+        sh '''
+          cd deploy/ansible
+          ansible-playbook site.yml \
+            -e dockerhub_user="${DOCKERHUB_USR}" \
+            -e image_tag="${IMAGE_TAG}"
+        '''
+      }
+    }
+
+    stage('Smoke test') {
+      when { branch 'main' }
+      steps {
+        sh '''
+          for i in 1 2 3 4 5 6 7 8 9 10; do
+            if curl -fsS http://localhost:8080/ | grep -q "${IMAGE_TAG}"; then exit 0; fi
+            sleep 3
+          done
+          echo "Deployed version ${IMAGE_TAG} not served"; exit 1
+        '''
+      }
+    }
+  }
+
+  post {
+    always { sh 'docker image prune -f || true' }
+  }
+}

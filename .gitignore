@@ -1,0 +1,14 @@
+.DS_Store
+.env
+*.key
+*.pem
+cosign.key
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+dist/
+build/
+*.retry
+.ansible/
+kubeconfig*

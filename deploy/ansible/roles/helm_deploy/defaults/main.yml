@@ -1,0 +1,8 @@
+---
+helm_release: waldo
+helm_namespace: waldo
+helm_chart_path: "{{ playbook_dir }}/../helm/waldo"
+kube_context: kind-waldo
+dockerhub_user: ""
+image_tag: latest
+rollout_timeout: 120s

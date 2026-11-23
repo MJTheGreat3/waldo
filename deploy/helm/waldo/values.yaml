@@ -1,0 +1,16 @@
+image:
+  # Overridden by the pipeline: --set image.registry=<dockerhub-user>
+  registry: CHANGEME
+  tag: latest
+  pullPolicy: IfNotPresent
+
+frontend:
+  replicas: 1
+  nodePort: 30080
+  resources:
+    requests:
+      cpu: 25m
+      memory: 32Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi

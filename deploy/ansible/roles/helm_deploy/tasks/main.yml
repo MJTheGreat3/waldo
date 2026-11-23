@@ -1,0 +1,22 @@
+---
+- name: Require a Docker Hub user
+  ansible.builtin.assert:
+    that: dockerhub_user | length > 0
+    fail_msg: "Pass -e dockerhub_user=<your Docker Hub username>"
+
+- name: Helm upgrade --install
+  ansible.builtin.command: >
+    helm upgrade --install {{ helm_release }} {{ helm_chart_path }}
+    --kube-context {{ kube_context }}
+    --namespace {{ helm_namespace }} --create-namespace
+    --set image.registry={{ dockerhub_user }}
+    --set image.tag={{ image_tag }}
+    --wait --timeout {{ rollout_timeout }} --atomic
+  register: helm_result
+  changed_when: "'has been upgraded' in helm_result.stdout or 'has been installed' in helm_result.stdout"
+
+- name: Wait for frontend rollout
+  ansible.builtin.command: >
+    kubectl --context {{ kube_context }} -n {{ helm_namespace }}
+    rollout status deployment/waldo-frontend --timeout={{ rollout_timeout }}
+  changed_when: false
